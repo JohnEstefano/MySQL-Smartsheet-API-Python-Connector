@@ -1,5 +1,5 @@
 ## MySQL - Smartsheet API - Python - Connector
-Python application that interacts with both a mySql database and Smartsheet API.\
+Python application that interacts with both a MySql database and Smartsheet API.\
 Very specific usecase that takes data from database, modifies it in a very specific way then updates specified Smartsheet sheet.
 
 

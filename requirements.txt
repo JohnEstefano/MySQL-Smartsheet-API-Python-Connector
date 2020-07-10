@@ -1,0 +1,16 @@
+###### Requirements with Version Specifiers ######`
+mysql-connector-python==8.0.20
+smartsheet-python-sdk==2.86.0
+pandas==0.25.1
+
+
+# Ubuntu 18.04.1 LTS
+# Python 3.7.4
+# mysql-connector-python 8.0.20
+# pandas 0.25.1
+# smartsheet-python-sdk 2.86.0
+
+# pip install mysql-connector-python
+# pip install pandas
+# pip install smartsheet-python-sdk
+

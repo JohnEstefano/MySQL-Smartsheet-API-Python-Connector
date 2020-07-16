@@ -6,8 +6,9 @@ import pandas as pd
 import smartsheet
 import logging
 import os
-import sys 
-import credentials_inputs 
+import sys
+import credentials_inputs
+import datetime
 
 # Create Log file / configure logging
 logging.basicConfig(
@@ -50,7 +51,7 @@ mycursor = mydb.cursor()
 # Execute SQL Query_1
 try:
     mycursor.execute(QUERY_1)
-    
+
 except:
     logging.info("Unable to execute MySQL query_1")
     print("Unable to execute MySQL query_1")
@@ -76,14 +77,35 @@ myresult = mycursor.fetchall()
 # Load query results into a pandas dataframe
 df_child = pd.DataFrame(myresult)
 
-# Join both dataframes on campaign_id and perform dataframe restructuring 
-df_joined = pd.merge(df_not_child, df_child, on = 6 , how='left')
-df_joined = df_joined.fillna(value = {'5_y':0})
-df_joined["a"] = df_joined['5_x'] + df_joined["5_y"]
+# Create id columns
+df_not_child[8] = df_not_child[0] +'_'+ df_not_child[1] +'_'+ df_not_child[2] +'_'+ df_not_child[3] +'_'+ df_not_child[4].astype(str)
+df_child[8] = df_child[0] +'_'+ df_child[1] +'_'+ df_child[2] +'_'+ df_child[3] +'_'+ df_child[4].astype(str)
+
+# Join both dataframes on campaign_id and perform dataframe restructuring
+df_joined = pd.merge(df_not_child, df_child, on = 8 , how='left')
+df_joined = df_joined.fillna(value = {'7_y':0})
+df_joined["a"] = df_joined['7_x'] + df_joined["7_y"]
 df_joined.a = df_joined.a.astype(int)
-df_joined = df_joined[['0_x','1_x','2_x','3_x','4_x','a',6]]
+df_joined = df_joined[['0_x','1_x','2_x','3_x','4_x','5_x','6_x','a',8]]
 df_joined = df_joined.copy()
-df_joined = df_joined.rename(columns={'0_x':0,'1_x':1,'2_x':2,'3_x':3,'4_x':4,'a':5})
+df_joined = df_joined.rename(columns={'0_x':0,'1_x':1,'2_x':2,'3_x':3,'4_x':4,'5_x':5,'6_x':6,'a':7})
+
+# Apply date buckets
+for i in df_joined.index:
+    if df_joined.at[i, 4].day < 10:
+        df_joined.at[i, 4] = df_joined.at[i, 4].replace(day= 1)
+    elif df_joined.at[i, 4].day > 9:
+        if df_joined.at[i, 4].day < 20:
+            df_joined.at[i, 4] = df_joined.at[i, 4].replace(day= 10)
+        elif df_joined.at[i, 4].day > 19:
+            df_joined.at[i, 4] = df_joined.at[i, 4].replace(day= 20)
+        else:
+            print(f'DATE BUCKETS ERROR: Row index#{i} of dataframe || REASON: 2nd Condition Not Satisfied || DATE:{df_joined.at[i, 4]}')
+            logging.info(f'DATE BUCKETS ERROR: Row index#{i} of dataframe || REASON: 2nd Condition Not Satisfied || DATE:{df_joined.at[i, 4]}')
+    else:
+        print(f'DATE BUCKETS ERROR: Row index#{i} of dataframe || REASON: No Condition Satisfied || DATE:{df_joined.at[i, 4]}')
+        logging.info(f'DATE BUCKETS ERROR: Row index#{i} of dataframe || REASON: No Condition Satisfied || DATE:{df_joined.at[i, 4]}')
+
 
 # Create base client object and set the access token
 smartsheet_client = smartsheet.Smartsheet(SMARTSHEET_API_TOKEN)
@@ -114,9 +136,9 @@ except:
 # Extract all the column-ids within sheet object
 # Elements within sheet object are accessable via dot notation
 try:
-    sheet_columns =[]
+    sheet_columns ={}
     for column in sheet.columns:
-        sheet_columns.append(column.id)
+        sheet_columns[column.title] = column.id
 except:
     logging.info("Can't extract smartsheet columns")
     print("Can't extract smartsheet columns")
@@ -138,38 +160,48 @@ for index, row in df_joined.iterrows():
     row_a = smartsheet.models.Row()
     #row_a.to_top = True
     row_a.cells.append({
-      'column_id': sheet_columns[0], #campaign_id
-      'value': row[6],
+      'column_id': sheet_columns['Campaign id'], #campaign_id
+      'value': row[8],
     })
 
     row_a.cells.append({
-      'column_id':sheet_columns[1], #campaign_name
+      'column_id':sheet_columns['Campaign Name'], #campaign_name
       'value': row[0],
     })
 
     row_a.cells.append({
-      'column_id': sheet_columns[2], #IBM_Plan
+      'column_id': sheet_columns['IBM Plan'], #IBM_Plan
       'value': row[1],
     })
 
     row_a.cells.append({
-      'column_id': sheet_columns[3], #IBM_Program
+      'column_id': sheet_columns['IBM Program'], #IBM_Program
       'value': row[2],
     })
-    
+
     row_a.cells.append({
-      'column_id': sheet_columns[4], #Tactic
+      'column_id': sheet_columns['Tactic'], #Tactic
       'value': row[3],
     })
-    
+
     row_a.cells.append({
-      'column_id': sheet_columns[5], #placement_start_date
+      'column_id': sheet_columns['Placement Start Date'], #placement_start_date
       'value': str(row[4]),
     })
-    
+
     row_a.cells.append({
-      'column_id': sheet_columns[6], #num_placements
+      'column_id': sheet_columns['Year'], #Year
       'value': row[5],
+    })
+
+    row_a.cells.append({
+      'column_id': sheet_columns['Quarter'], #Quarter
+      'value': row[6],
+    })
+
+    row_a.cells.append({
+      'column_id': sheet_columns['# of Placements'], #num_placements
+      'value': row[7],
     })
 
 
@@ -182,5 +214,3 @@ for index, row in df_joined.iterrows():
         logging.info(f'Error #{error_num} REASON STATED ABOVE || Row Details: Query Row #{index} Campaign Id: {row[0]}')
         print(f'Error #{error_num} REASON STATED IN LOG || Row Details: Query Row #{index} Campaign Id: {row[0]}')
         error_num +=1
-
-

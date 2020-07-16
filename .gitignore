@@ -1,1 +1,5 @@
 credentials_inputs.py
+mysql_smartsheet_connector.ipynb
+.ipynb_checkpoints
+log.log
+__pycache__

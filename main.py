@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[ ]:
+
+
 import mysql.connector
 import pandas as pd
 import smartsheet
@@ -10,12 +13,20 @@ import sys
 import credentials_inputs
 import datetime
 
+
+# In[ ]:
+
+
 # Create Log file / configure logging
 logging.basicConfig(
     filename='log.log',
     format='%(asctime)s %(levelname)-8s %(message)s',
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
+
+
+# In[ ]:
+
 
 # Load in Parameters
 # DB Cred
@@ -32,6 +43,10 @@ QUERY_2 = credentials_inputs.QUERY_2
 SMARTSHEET_API_TOKEN = credentials_inputs.SMARTSHEET_API_TOKEN
 SMARTSHEET_SHEET_ID = credentials_inputs.SMARTSHEET_SHEET_ID
 
+
+# In[ ]:
+
+
 # Configure database credentials and establish connection
 try:
     mydb = mysql.connector.connect(
@@ -45,8 +60,16 @@ except:
     print("Can't connect to MySQL server")
     sys.exit()
 
+
+# In[ ]:
+
+
 # Create cursor object to excute SQL statments
 mycursor = mydb.cursor()
+
+
+# In[ ]:
+
 
 # Execute SQL Query_1
 try:
@@ -57,11 +80,23 @@ except:
     print("Unable to execute MySQL query_1")
     sys.exit()
 
+
+# In[ ]:
+
+
 # Stage query results
 myresult = mycursor.fetchall()
 
+
+# In[ ]:
+
+
 # Load query results into a pandas dataframe
 df_not_child = pd.DataFrame(myresult)
+
+
+# In[ ]:
+
 
 # Execute SQL Query_2
 try:
@@ -71,15 +106,31 @@ except:
     print("Unable to execute MySQL query_2")
     sys.exit()
 
+
+# In[ ]:
+
+
 # Stage query results
 myresult = mycursor.fetchall()
+
+
+# In[ ]:
+
 
 # Load query results into a pandas dataframe
 df_child = pd.DataFrame(myresult)
 
+
+# In[ ]:
+
+
 # Create id columns
-df_not_child[8] = df_not_child[0] +'_'+ df_not_child[1] +'_'+ df_not_child[2] +'_'+ df_not_child[3] +'_'+ df_not_child[4].astype(str)
-df_child[8] = df_child[0] +'_'+ df_child[1] +'_'+ df_child[2] +'_'+ df_child[3] +'_'+ df_child[4].astype(str)
+df_not_child[8] = df_not_child[1] +'_'+ df_not_child[2] +'_'+ df_not_child[3] +'_'+ df_not_child[4].astype(str)
+df_child[8] = df_child[1] +'_'+ df_child[2] +'_'+ df_child[3] +'_'+ df_child[4].astype(str)
+
+
+# In[ ]:
+
 
 # Join both dataframes on campaign_id and perform dataframe restructuring
 df_joined = pd.merge(df_not_child, df_child, on = 8 , how='left')
@@ -89,6 +140,10 @@ df_joined.a = df_joined.a.astype(int)
 df_joined = df_joined[['0_x','1_x','2_x','3_x','4_x','5_x','6_x','a',8]]
 df_joined = df_joined.copy()
 df_joined = df_joined.rename(columns={'0_x':0,'1_x':1,'2_x':2,'3_x':3,'4_x':4,'5_x':5,'6_x':6,'a':7})
+
+
+# In[ ]:
+
 
 # Apply date buckets
 for i in df_joined.index:
@@ -107,11 +162,22 @@ for i in df_joined.index:
         logging.info(f'DATE BUCKETS ERROR: Row index#{i} of dataframe || REASON: No Condition Satisfied || DATE:{df_joined.at[i, 4]}')
 
 
+# In[ ]:
+
+
 # Create base client object and set the access token
 smartsheet_client = smartsheet.Smartsheet(SMARTSHEET_API_TOKEN)
 
+
+# In[ ]:
+
+
 # Make sure we don't miss any errors
 smartsheet_client.errors_as_exceptions(True)
+
+
+# In[ ]:
+
 
 # Get sheet object and extract all the row ids within it
 # Elements within sheet object are accessable via dot notation
@@ -121,6 +187,10 @@ except:
     logging.info("Can't retrive Smartsheet sheet object")
     print("Can't retrive Smartsheet sheet object")
     sys.exit()
+
+
+# In[ ]:
+
 
 # Extract all the row-ids within sheet object
 # Elements within sheet object are accessable via dot notation
@@ -133,6 +203,10 @@ except:
     print("Can't extract smartsheet rows")
     sys.exit()
 
+
+# In[ ]:
+
+
 # Extract all the column-ids within sheet object
 # Elements within sheet object are accessable via dot notation
 try:
@@ -144,6 +218,10 @@ except:
     print("Can't extract smartsheet columns")
     sys.exit()
 
+
+# In[ ]:
+
+
 # If present, delete all rows in sheet
 if sheet_rows:
     try:
@@ -153,6 +231,10 @@ if sheet_rows:
         print("Can't delete existing smartsheet rows")
         sys.exit()
 
+
+# In[ ]:
+
+
 # Iterate over dataframe rows, add rows to list
 error_num = 1
 for index, row in df_joined.iterrows():
@@ -160,7 +242,7 @@ for index, row in df_joined.iterrows():
     row_a = smartsheet.models.Row()
     #row_a.to_top = True
     row_a.cells.append({
-      'column_id': sheet_columns['Campaign id'], #campaign_id
+      'column_id': sheet_columns['Campaign Key'], #campaign_id
       'value': row[8],
     })
 

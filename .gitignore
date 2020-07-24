@@ -1,6 +1,7 @@
 credentials_inputs.py
 credentials_inputs.pyZone.Identifier
 mysql_smartsheet_connector.ipynb
+mysql_smartsheet_connector.py
 .ipynb_checkpoints
 log.log
 __pycache__

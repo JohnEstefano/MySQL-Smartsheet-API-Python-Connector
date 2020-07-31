@@ -165,6 +165,35 @@ for i in df_joined.index:
 # In[ ]:
 
 
+# Apply new date format
+for i in df_joined.index:
+    month = str(df_joined.at[i, 4].month)
+    day = str(df_joined.at[i, 4].day)
+    year = str(df_joined.at[i, 4].year)
+    if len(month) < 2:
+        month = '0'+month
+
+    if len(day) < 2:
+        day = '0'+day
+
+    if len(year) < 4:
+        year = '20'+year
+
+    df_joined.at[i, 4] = f'{month}/{day}/{year}'
+
+
+
+
+# In[ ]:
+
+
+# reapply column id with newly formated date
+df_joined[8] = df_joined[1] +'_'+ df_joined[2] +'_'+ df_joined[3] +'_'+ df_joined[4]
+
+
+# In[ ]:
+
+
 # Create base client object and set the access token
 smartsheet_client = smartsheet.Smartsheet(SMARTSHEET_API_TOKEN)
 
@@ -296,3 +325,6 @@ for index, row in df_joined.iterrows():
         logging.info(f'Error #{error_num} REASON STATED ABOVE || Row Details: Query Row #{index} Campaign Id: {row[0]}')
         print(f'Error #{error_num} REASON STATED IN LOG || Row Details: Query Row #{index} Campaign Id: {row[0]}')
         error_num +=1
+
+
+# In[ ]:

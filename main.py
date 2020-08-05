@@ -188,7 +188,7 @@ for i in df_joined.index:
 
 
 # reapply column id with newly formated date
-df_joined[8] = df_joined[1] +'_'+ df_joined[2] +'_'+ df_joined[3] +'_'+ df_joined[4]
+df_joined[8] = df_joined[1] +'_'+ df_joined[2] +'_'+ df_joined[3] +'_'+ df_joined[4][1][:-2]
 
 
 # In[ ]:

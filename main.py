@@ -17,6 +17,16 @@ import datetime
 # In[ ]:
 
 
+# For debugging: Displays entire dataframe
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', -1)
+
+
+# In[ ]:
+
+
 # Create Log file / configure logging
 logging.basicConfig(
     filename='log.log',
@@ -85,14 +95,14 @@ except:
 
 
 # Stage query results
-myresult = mycursor.fetchall()
+myresult_1 = mycursor.fetchall()
 
 
 # In[ ]:
 
 
 # Load query results into a pandas dataframe
-df_not_child = pd.DataFrame(myresult)
+df_not_child = pd.DataFrame(myresult_1)
 
 
 # In[ ]:
@@ -111,14 +121,14 @@ except:
 
 
 # Stage query results
-myresult = mycursor.fetchall()
+myresult_2 = mycursor.fetchall()
 
 
 # In[ ]:
 
 
 # Load query results into a pandas dataframe
-df_child = pd.DataFrame(myresult)
+df_child = pd.DataFrame(myresult_2)
 
 
 # In[ ]:
@@ -172,23 +182,25 @@ for i in df_joined.index:
     year = str(df_joined.at[i, 4].year)
     if len(month) < 2:
         month = '0'+month
-
+    
     if len(day) < 2:
         day = '0'+day
-
+    
     if len(year) < 4:
         year = '20'+year
-
+                   
     df_joined.at[i, 4] = f'{month}/{day}/{year}'
-
-
+    
+    
 
 
 # In[ ]:
 
 
 # reapply column id with newly formated date
-df_joined[8] = df_joined[1] +'_'+ df_joined[2] +'_'+ df_joined[3] +'_'+ df_joined[4][1][:-2]
+df_joined[8] = df_joined[1] +'_'+ df_joined[2] +'_'+ df_joined[3] +'_'+ df_joined[4]
+for index, row in df_joined.iterrows():
+    df_joined.at[index,8] = row[8][:-2]
 
 
 # In[ ]:
@@ -270,10 +282,10 @@ for index, row in df_joined.iterrows():
     #Specify cell values for one row
     row_a = smartsheet.models.Row()
     #row_a.to_top = True
-    row_a.cells.append({
-      'column_id': sheet_columns['Campaign Key'], #campaign_id
-      'value': row[8],
-    })
+    #row_a.cells.append({
+      #'column_id': sheet_columns['Campaign Key'], #campaign_id
+      #'value': row[8],
+    #})
 
     row_a.cells.append({
       'column_id':sheet_columns['Campaign Name'], #campaign_name
@@ -322,9 +334,13 @@ for index, row in df_joined.iterrows():
             SMARTSHEET_SHEET_ID,       # sheet_id
             [row_a])
     except:
-        logging.info(f'Error #{error_num} REASON STATED ABOVE || Row Details: Query Row #{index} Campaign Id: {row[0]}')
-        print(f'Error #{error_num} REASON STATED IN LOG || Row Details: Query Row #{index} Campaign Id: {row[0]}')
+        logging.info(f'Error #{error_num} REASON STATED ABOVE || Row Details: Query Row #{index} Campaign Name: {row[0]}')
+        print(f'Error #{error_num} REASON STATED IN LOG || Row Details: Query Row #{index} Campaign Name: {row[0]}')
         error_num +=1
 
 
 # In[ ]:
+
+
+
+

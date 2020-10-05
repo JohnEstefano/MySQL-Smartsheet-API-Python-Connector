@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 import mysql.connector
@@ -14,17 +14,17 @@ import credentials_inputs
 import datetime
 
 
-# In[ ]:
+# In[2]:
 
 
 # For debugging: Displays entire dataframe
-pd.set_option('display.max_rows', None)
-pd.set_option('display.max_columns', None)
-pd.set_option('display.width', None)
-pd.set_option('display.max_colwidth', -1)
+# pd.set_option('display.max_rows', None)
+# pd.set_option('display.max_columns', None)
+# pd.set_option('display.width', None)
+# pd.set_option('display.max_colwidth', -1)
 
 
-# In[ ]:
+# In[3]:
 
 
 # Create Log file / configure logging
@@ -35,7 +35,7 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S')
 
 
-# In[ ]:
+# In[4]:
 
 
 # Load in Parameters
@@ -53,8 +53,12 @@ QUERY_2 = credentials_inputs.QUERY_2
 SMARTSHEET_API_TOKEN = credentials_inputs.SMARTSHEET_API_TOKEN
 SMARTSHEET_SHEET_ID = credentials_inputs.SMARTSHEET_SHEET_ID
 
+CAMPAIGN_KEY_FORMULA = credentials_inputs.CAMPAIGN_KEY_FORMULA
+FINAL_PLAN_FORMULA = credentials_inputs.FINAL_PLAN_FORMULA
+FINAL_PROGRAM_FORMULA = credentials_inputs.FINAL_PROGRAM_FORMULA
 
-# In[ ]:
+
+# In[5]:
 
 
 # Configure database credentials and establish connection
@@ -71,14 +75,14 @@ except:
     sys.exit()
 
 
-# In[ ]:
+# In[6]:
 
 
 # Create cursor object to excute SQL statments
 mycursor = mydb.cursor()
 
 
-# In[ ]:
+# In[7]:
 
 
 # Execute SQL Query_1
@@ -91,21 +95,21 @@ except:
     sys.exit()
 
 
-# In[ ]:
+# In[8]:
 
 
 # Stage query results
 myresult_1 = mycursor.fetchall()
 
 
-# In[ ]:
+# In[9]:
 
 
 # Load query results into a pandas dataframe
 df_not_child = pd.DataFrame(myresult_1)
 
 
-# In[ ]:
+# In[10]:
 
 
 # Execute SQL Query_2
@@ -117,21 +121,21 @@ except:
     sys.exit()
 
 
-# In[ ]:
+# In[11]:
 
 
 # Stage query results
 myresult_2 = mycursor.fetchall()
 
 
-# In[ ]:
+# In[12]:
 
 
 # Load query results into a pandas dataframe
 df_child = pd.DataFrame(myresult_2)
 
 
-# In[ ]:
+# In[13]:
 
 
 # Create id columns
@@ -139,7 +143,7 @@ df_not_child[8] = df_not_child[1] +'_'+ df_not_child[2] +'_'+ df_not_child[3] +'
 df_child[8] = df_child[1] +'_'+ df_child[2] +'_'+ df_child[3] +'_'+ df_child[4].astype(str)
 
 
-# In[ ]:
+# In[14]:
 
 
 # Join both dataframes on campaign_id and perform dataframe restructuring
@@ -152,7 +156,7 @@ df_joined = df_joined.copy()
 df_joined = df_joined.rename(columns={'0_x':0,'1_x':1,'2_x':2,'3_x':3,'4_x':4,'5_x':5,'6_x':6,'a':7})
 
 
-# In[ ]:
+# In[15]:
 
 
 # Apply date buckets
@@ -176,51 +180,58 @@ for i in df_joined.index:
 
 
 # Apply new date format
-for i in df_joined.index:
-    month = str(df_joined.at[i, 4].month)
-    day = str(df_joined.at[i, 4].day)
-    year = str(df_joined.at[i, 4].year)
-    if len(month) < 2:
-        month = '0'+month
-    
-    if len(day) < 2:
-        day = '0'+day
-    
-    if len(year) < 4:
-        year = '20'+year
-                   
-    df_joined.at[i, 4] = f'{month}/{day}/{year}'
-    
-    
+#for i in df_joined.index:
+#    month = str(df_joined.at[i, 4].month)
+#    day = str(df_joined.at[i, 4].day)
+#    year = str(df_joined.at[i, 4].year)
+#    if len(month) < 2:
+#        month = '0'+month
+#    
+#    if len(day) < 2:
+#        day = '0'+day
+#    
+#    if len(year) < 4:
+#        year = '20'+year
+#                   
+#    df_joined.at[i, 4] = f'{month}/{day}/{year}'
 
 
-# In[ ]:
+# In[16]:
 
 
 # reapply column id with newly formated date
-df_joined[8] = df_joined[1] +'_'+ df_joined[2] +'_'+ df_joined[3] +'_'+ df_joined[4]
-for index, row in df_joined.iterrows():
-    df_joined.at[index,8] = row[8][:-2]
+df_joined[8] = df_joined[1] +'_'+ df_joined[2] +'_'+ df_joined[3] +'_'+ df_joined[4].astype(str)
+
+# Truncate year from YYYY to YY
+# for index, row in df_joined.iterrows():
+#    df_joined.at[index,8] = row[8][:-2]
 
 
-# In[ ]:
+# In[17]:
+
+
+#Remove Duplicates
+df_joined = df_joined.groupby([0,1,2,3,4,5,6,8])[7].sum().reset_index()
+
+
+# In[18]:
 
 
 # Create base client object and set the access token
 smartsheet_client = smartsheet.Smartsheet(SMARTSHEET_API_TOKEN)
 
 
-# In[ ]:
+# In[19]:
 
 
 # Make sure we don't miss any errors
 smartsheet_client.errors_as_exceptions(True)
 
 
-# In[ ]:
+# In[20]:
 
 
-# Get sheet object and extract all the row ids within it
+# Get sheet object
 # Elements within sheet object are accessable via dot notation
 try:
     sheet = smartsheet_client.Sheets.get_sheet(SMARTSHEET_SHEET_ID)
@@ -230,22 +241,7 @@ except:
     sys.exit()
 
 
-# In[ ]:
-
-
-# Extract all the row-ids within sheet object
-# Elements within sheet object are accessable via dot notation
-try:
-    sheet_rows =[]
-    for row in sheet.rows:
-        sheet_rows.append(row.id)
-except:
-    logging.info("Can't extract smartsheet rows")
-    print("Can't extract smartsheet rows")
-    sys.exit()
-
-
-# In[ ]:
+# In[21]:
 
 
 # Extract all the column-ids within sheet object
@@ -260,20 +256,31 @@ except:
     sys.exit()
 
 
-# In[ ]:
+# In[22]:
 
 
 # If present, delete all rows in sheet
-if sheet_rows:
-    try:
-        response = smartsheet_client.Sheets.delete_rows(SMARTSHEET_SHEET_ID, ids=sheet_rows, ignore_rows_not_found=False)
-    except:
-        logging.info("Can't delete existing smartsheet rows")
-        print("Can't delete existing smartsheet rows")
-        sys.exit()
+# Elements within sheet object are accessable via dot notation
+try:
+    sheet_rows=[]
+    for row in sheet.rows:
+        sheet_rows.append(row.id)
+
+        #Delete rows to sheet by chunks of 200
+        if len(sheet_rows) > 199:
+            smartsheet_client.Sheets.delete_rows(SMARTSHEET_SHEET_ID,sheet_rows)
+            sheet_rows = []
+
+    # Delete remaining rows
+    if len(sheet_rows)>0:
+        smartsheet_client.Sheets.delete_rows(SMARTSHEET_SHEET_ID,sheet_rows)
+except:
+    logging.info("Can't extract smartsheet columns")
+    print("Can't extract smartsheet columns")
+    sys.exit() 
 
 
-# In[ ]:
+# In[23]:
 
 
 # Iterate over dataframe rows, add rows to list
@@ -326,8 +333,23 @@ for index, row in df_joined.iterrows():
       'column_id': sheet_columns['# of Placements'], #num_placements
       'value': row[7],
     })
-
-
+    
+    #Smartsheet formulas
+    row_a.cells.append({
+      'column_id': sheet_columns['Campaign Key'], #Column values generated by smartsheet
+      'formula': CAMPAIGN_KEY_FORMULA,
+    })
+ 
+    row_a.cells.append({
+      'column_id': sheet_columns['Final Plan'], #Column values generated by smartsheet
+      'formula': FINAL_PLAN_FORMULA,
+    })
+    
+    row_a.cells.append({
+      'column_id': sheet_columns['Final Program'], #Column values generated by smartsheet
+      'formula': FINAL_PROGRAM_FORMULA,
+    })
+    
     # Add rows in list to sheet and catch errors
     try:
         response = smartsheet_client.Sheets.add_rows(

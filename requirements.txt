@@ -1,5 +1,5 @@
 ###### Requirements with Version Specifiers ######`
-mysql-connector-python==8.0.20
+mysql-connector-python==9.1.0
 smartsheet-python-sdk==2.86.0
 pandas==0.25.1
 
